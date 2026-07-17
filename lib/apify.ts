@@ -1,5 +1,5 @@
 const APIFY_TOKEN = process.env.APIFY_API_TOKEN!
-const ACTOR_ID = 'karamelo~mercadolibre-scraper-espanol-castellano'
+const ACTOR_ID = process.env.APIFY_ACTOR_ID || 'karamelo~mercadolibre-scraper-espanol-castellano'
 const BASE_URL = 'https://api.apify.com/v2'
 
 export interface SearchParams {
