@@ -149,29 +149,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TikTok coming soon */}
+      {/* TikTok - LIVE */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#010101] via-[#1a1a2e] to-[#16213e]">
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col lg:flex-row items-center gap-10">
             <div className="lg:w-1/2">
-              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-white text-sm font-medium mb-5">
-                <Clock className="w-4 h-4 text-[#69C9D0]" />
-                Próximamente en OmniSeller
+              <div className="inline-flex items-center gap-2 bg-[#69C9D0]/20 border border-[#69C9D0]/40 rounded-full px-4 py-1.5 text-[#69C9D0] text-sm font-medium mb-5">
+                <Zap className="w-4 h-4" />
+                Nuevo — Ya disponible en OmniSeller
               </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-5 leading-tight">
-                TikTok Shop Intelligence
-                <span className="block text-[#69C9D0]">para creadores y marcas</span>
+                TikTok Intelligence
+                <span className="block text-[#69C9D0]">videos virales de tu nicho</span>
               </h2>
               <p className="text-slate-300 text-lg mb-6">
-                ¿Quieres ser UGC creator o influencer? OmniSeller te dirá qué productos están explotando en TikTok Shop,
-                qué marcas pagan mejor y cuáles categorías tienen mayor demanda en Chile, México y Brasil.
+                Busca cualquier producto o categoría y ve qué videos están explotando en TikTok.
+                Descubre qué creadores dominan tu nicho, cuántas vistas tienen y qué hashtags usan.
               </p>
               <ul className="space-y-3 mb-8">
                 {[
-                  'Trending products en TikTok Shop por país',
-                  'Marcas buscando creadores UGC para colaborar',
-                  'Estimación de vistas, ventas y comisiones',
-                  'Alertas de productos virales antes que escalen',
+                  'Videos más virales por búsqueda en tiempo real',
+                  'Métricas: vistas, likes, comentarios, shares',
+                  'Perfil de cada creador y sus seguidores',
+                  'Exporta a CSV para tu análisis de contenido',
                 ].map(item => (
                   <li key={item} className="flex items-center gap-3 text-slate-200">
                     <CheckCircle className="w-5 h-5 text-[#69C9D0] flex-shrink-0" />
@@ -179,8 +179,8 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <Link href="/auth/register" className="inline-flex items-center gap-2 bg-[#69C9D0] text-[#010101] px-6 py-3 rounded-xl font-bold hover:bg-[#5ab8bf] transition-colors">
-                Avísame cuando esté disponible
+              <Link href="/dashboard" className="inline-flex items-center gap-2 bg-[#69C9D0] text-[#010101] px-6 py-3 rounded-xl font-bold hover:bg-[#5ab8bf] transition-colors">
+                Probar TikTok Intelligence gratis
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
@@ -189,11 +189,11 @@ export default function Home() {
                 <div className="w-64 h-64 rounded-full bg-gradient-to-br from-[#69C9D0]/20 to-[#EE1D52]/20 flex items-center justify-center">
                   <div className="text-9xl">🎵</div>
                 </div>
-                <div className="absolute -top-4 -right-4 bg-[#EE1D52] text-white text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">
-                  #MuyPronto
+                <div className="absolute -top-4 -right-4 bg-[#69C9D0] text-[#010101] text-xs font-bold px-3 py-1.5 rounded-full">
+                  ✓ Live ahora
                 </div>
                 <div className="absolute -bottom-2 -left-2 bg-white/10 backdrop-blur text-white text-xs px-3 py-1.5 rounded-full border border-white/20">
-                  UGC · TikTok Shop · Influencers
+                  Videos · Creadores · Hashtags
                 </div>
               </div>
             </div>

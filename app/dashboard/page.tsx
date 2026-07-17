@@ -37,13 +37,18 @@ export default function DashboardPage() {
   const [lastQuery, setLastQuery] = useState('')
   const [lastCountry, setLastCountry] = useState('CL')
   const [fromCache, setFromCache] = useState(false)
+  const [searchesUsed, setSearchesUsed] = useState(0)
+  const [searchesLimit, setSearchesLimit] = useState(3)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUserEmail(data.session?.user?.email ?? null)
+      setAccessToken(data.session?.access_token ?? null)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUserEmail(session?.user?.email ?? null)
+      setAccessToken(session?.access_token ?? null)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -65,32 +70,59 @@ export default function DashboardPage() {
     setLastQuery(q.trim())
     setLastCountry(c)
 
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
+
     try {
       if (p === 'mercadolibre') {
         const res = await fetch('/api/search', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ query: q.trim(), country: c, maxItems }),
         })
         const data = await res.json()
+        if (res.status === 403 && data.error === 'límite_alcanzado') {
+          setSearchesUsed(data.searches_used)
+          setSearchesLimit(data.searches_limit)
+          throw new Error('__limite__')
+        }
         if (!res.ok) throw new Error(data.error || 'Error al buscar')
         setMlResults(data.items)
         setTtResults(null)
         setFromCache(data.fromCache ?? false)
+        if (data.searches_used !== undefined) {
+          setSearchesUsed(data.searches_used)
+          setSearchesLimit(data.searches_limit)
+        }
       } else {
         const res = await fetch('/api/search/tiktok', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ query: q.trim(), maxItems: 30 }),
         })
         const data = await res.json()
+        if (res.status === 403 && data.error === 'límite_alcanzado') {
+          setSearchesUsed(data.searches_used)
+          setSearchesLimit(data.searches_limit)
+          throw new Error('__limite__')
+        }
         if (!res.ok) throw new Error(data.error || 'Error al buscar en TikTok')
         setTtResults(data.items)
         setMlResults(null)
         setFromCache(data.fromCache ?? false)
+        if (data.searches_used !== undefined) {
+          setSearchesUsed(data.searches_used)
+          setSearchesLimit(data.searches_limit)
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al buscar')
+      const msg = err instanceof Error ? err.message : 'Error al buscar'
+      if (msg === '__limite__') {
+        setError('__limite__')
+        setLoading(false)
+        return
+      }
+      setError(msg)
     } finally {
       setLoading(false)
     }
@@ -219,9 +251,20 @@ export default function DashboardPage() {
               </p>
             )}
 
-            {error && (
+            {error && error !== '__limite__' && (
               <div className="mt-3 text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg border border-red-100">
                 {error}
+              </div>
+            )}
+            {error === '__limite__' && (
+              <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-800">Alcanzaste el límite de tu plan gratuito</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Usaste {searchesUsed} de {searchesLimit} búsquedas. Mejora tu plan para buscar sin límites.</p>
+                </div>
+                <Link href="/auth/register" className="text-sm font-bold bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
+                  Ver planes →
+                </Link>
               </div>
             )}
           </form>
@@ -277,8 +320,8 @@ export default function DashboardPage() {
                   </div>
                   <span className="font-semibold text-slate-700 text-sm">Búsquedas realizadas</span>
                 </div>
-                <p className="text-3xl font-extrabold text-slate-900">0 / 3</p>
-                <p className="text-slate-400 text-xs mt-1">en tu periodo de prueba</p>
+                <p className="text-3xl font-extrabold text-slate-900">{searchesUsed} / {searchesLimit}</p>
+                <p className="text-slate-400 text-xs mt-1">{userEmail ? 'en tu plan actual' : 'en tu periodo de prueba'}</p>
               </div>
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-3">
