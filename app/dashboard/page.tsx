@@ -184,8 +184,11 @@ export default function DashboardPage() {
           </Link>
           <div className="flex items-center gap-3">
             {userEmail ? (
-              <>
-                <span className="hidden sm:inline-block text-xs text-slate-400 truncate max-w-[160px]">{userEmail}</span>
+                <>
+                <Link href="/account"
+                  className="hidden sm:inline-block text-xs text-slate-400 truncate max-w-[160px] hover:text-brand-600 transition-colors">
+                  {userEmail}
+                </Link>
                 <button onClick={handleSignOut}
                   className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors">
                   <LogOut className="w-3.5 h-3.5" /> Salir

@@ -335,13 +335,17 @@ export default function Home() {
             </div>
             <div className="flex gap-6 text-sm">
               <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+              <Link href="/pricing" className="hover:text-white transition-colors">Precios</Link>
               <Link href="/auth/login" className="hover:text-white transition-colors">Iniciar sesión</Link>
               <Link href="/auth/register" className="hover:text-white transition-colors">Registro</Link>
-              <Link href="#pricing" className="hover:text-white transition-colors">Precios</Link>
             </div>
           </div>
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-sm">
+          <div className="border-t border-slate-800 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-sm">
             <p>© 2026 OmniSeller. Todos los derechos reservados. 🇨🇱 🇧🇷 🇲🇽</p>
+            <div className="flex gap-4">
+              <Link href="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
+              <Link href="/terminos" className="hover:text-white transition-colors">Términos</Link>
+            </div>
           </div>
         </div>
       </footer>
