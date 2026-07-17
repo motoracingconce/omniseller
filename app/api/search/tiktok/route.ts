@@ -118,12 +118,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (userId && adminConfigured) {
-      supabaseAdmin
+      void supabaseAdmin
         .from('users')
         .update({ searches_used: searchesUsed + 1 })
         .eq('id', userId)
-        .then(() => {})
-        .catch(() => {})
+        .then(() => {}, () => {})
     }
 
     return NextResponse.json({
