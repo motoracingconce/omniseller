@@ -5,12 +5,12 @@ import { COUNTRIES } from '@/lib/countries'
 import type { MLProduct } from '@/lib/apify'
 
 interface Props {
-  onResults: (items: MLProduct[], query: string, country: string) => void
-  onLoading: (v: boolean) => void
-  loading: boolean
+  onResults?: (items: MLProduct[], query: string, country: string) => void
+  onLoading?: (v: boolean) => void
+  loading?: boolean
 }
 
-export default function SearchForm({ onResults, onLoading, loading }: Props) {
+export default function SearchForm({ onResults = () => {}, onLoading = () => {}, loading = false }: Props) {
   const [query, setQuery] = useState('')
   const [country, setCountry] = useState('CL')
   const [maxItems, setMaxItems] = useState(50)
