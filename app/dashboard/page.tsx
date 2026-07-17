@@ -1,12 +1,14 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Search, Loader2, BarChart3, TrendingUp, Star, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search, Loader2, BarChart3, TrendingUp, Star, ChevronRight, LogOut } from 'lucide-react'
 import { COUNTRIES } from '@/lib/countries'
 import type { MLProduct } from '@/lib/apify'
 import type { TikTokVideo } from '@/lib/tiktok'
 import ResultsTable from '@/components/ResultsTable'
 import TikTokResults from '@/components/TikTokResults'
+import { supabase } from '@/lib/supabase'
 
 type Platform = 'mercadolibre' | 'tiktok'
 
@@ -22,6 +24,8 @@ const QUICK_SEARCHES: { label: string; emoji: string; country: string; platform:
 ]
 
 export default function DashboardPage() {
+  const router = useRouter()
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const [platform, setPlatform] = useState<Platform>('mercadolibre')
   const [query, setQuery] = useState('')
   const [country, setCountry] = useState('CL')
@@ -33,6 +37,21 @@ export default function DashboardPage() {
   const [lastQuery, setLastQuery] = useState('')
   const [lastCountry, setLastCountry] = useState('CL')
   const [fromCache, setFromCache] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUserEmail(data.session?.user?.email ?? null)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUserEmail(session?.user?.email ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/auth/login')
+  }
 
   async function handleSearch(e: React.FormEvent | null, overrideQuery?: string, overridePlatform?: Platform, overrideCountry?: string) {
     if (e) e.preventDefault()
@@ -87,13 +106,25 @@ export default function DashboardPage() {
           <Link href="/" className="font-extrabold text-lg">
             <span className="text-brand-600">Omni</span><span className="text-slate-800">Seller</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline-block text-sm text-slate-500">
-              Plan: <span className="font-semibold text-brand-600">Explorador (7 días gratis)</span>
-            </span>
-            <Link href="/auth/register" className="bg-brand-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-brand-700">
-              Mejorar plan
-            </Link>
+          <div className="flex items-center gap-3">
+            {userEmail ? (
+              <>
+                <span className="hidden sm:inline-block text-xs text-slate-400 truncate max-w-[160px]">{userEmail}</span>
+                <button onClick={handleSignOut}
+                  className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors">
+                  <LogOut className="w-3.5 h-3.5" /> Salir
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="hidden sm:inline-block text-sm text-slate-500">
+                  Plan: <span className="font-semibold text-brand-600">Explorador (7 días gratis)</span>
+                </span>
+                <Link href="/auth/register" className="bg-brand-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-brand-700">
+                  Mejorar plan
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

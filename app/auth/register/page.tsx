@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Mail } from 'lucide-react'
 import { PLANS } from '@/lib/plans'
+import { supabase } from '@/lib/supabase'
 
 export default function RegisterPage() {
   const [selectedPlan, setSelectedPlan] = useState('free')
@@ -10,14 +11,27 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // TODO: supabase.auth.signUp({ email, password })
-    setTimeout(() => {
-      alert('¡Cuenta creada! Revisa tu email para confirmar.')
+    setError('')
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      },
+    })
+    if (authError) {
+      setError(authError.message)
       setLoading(false)
-    }, 1200)
+      return
+    }
+    setSuccess(true)
+    setLoading(false)
   }
 
   return (
@@ -101,13 +115,27 @@ export default function RegisterPage() {
                 className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
               />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-brand-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-brand-700 disabled:opacity-60 transition-colors"
-            >
-              {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}
-            </button>
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 px-4 py-2 rounded-lg border border-red-100">
+                {error}
+              </div>
+            )}
+
+            {success ? (
+              <div className="text-center py-4">
+                <Mail className="w-10 h-10 text-brand-500 mx-auto mb-3" />
+                <p className="font-semibold text-slate-800 text-sm">¡Revisa tu email!</p>
+                <p className="text-slate-400 text-xs mt-1">Te enviamos un link de confirmación a <strong>{email}</strong></p>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-brand-600 text-white py-3 rounded-xl font-bold text-sm hover:bg-brand-700 disabled:opacity-60 transition-colors"
+              >
+                {loading ? 'Creando cuenta...' : 'Crear cuenta gratis'}
+              </button>
+            )}
           </form>
           <p className="text-center text-sm text-slate-500 mt-4">
             ¿Ya tienes cuenta?{' '}

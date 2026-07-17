@@ -1,9 +1,12 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -13,10 +16,15 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    // TODO: conectar con Supabase auth
-    await new Promise(r => setTimeout(r, 1000))
-    setLoading(false)
-    setError('Autenticación próximamente disponible')
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    if (authError) {
+      setError(authError.message === 'Invalid login credentials'
+        ? 'Email o contraseña incorrectos'
+        : authError.message)
+      setLoading(false)
+      return
+    }
+    router.push('/dashboard')
   }
 
   return (
