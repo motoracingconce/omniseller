@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, Loader2, BarChart3, TrendingUp, Star, ChevronRight, LogOut } from 'lucide-react'
+import { Search, Loader2, BarChart3, TrendingUp, Star, ChevronRight, LogOut, Crown } from 'lucide-react'
 import { COUNTRIES } from '@/lib/countries'
 import type { MLProduct } from '@/lib/apify'
 import type { TikTokVideo } from '@/lib/tiktok'
@@ -11,6 +11,9 @@ import TikTokResults from '@/components/TikTokResults'
 import { supabase } from '@/lib/supabase'
 
 type Platform = 'mercadolibre' | 'tiktok'
+
+const GUEST_KEY = 'os_guest_searches'
+const GUEST_LIMIT = 1
 
 const QUICK_SEARCHES: { label: string; emoji: string; country: string; platform: Platform }[] = [
   { label: 'Envases desechables', emoji: '📦', country: 'CL', platform: 'mercadolibre' },
@@ -40,15 +43,32 @@ export default function DashboardPage() {
   const [searchesUsed, setSearchesUsed] = useState(0)
   const [searchesLimit, setSearchesLimit] = useState(3)
   const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number>(7)
+  const [guestSearches, setGuestSearches] = useState(0)
 
   useEffect(() => {
+    const stored = parseInt(localStorage.getItem(GUEST_KEY) ?? '0', 10)
+    setGuestSearches(stored)
+
     supabase.auth.getSession().then(({ data }) => {
       setUserEmail(data.session?.user?.email ?? null)
       setAccessToken(data.session?.access_token ?? null)
+      if (data.session?.user?.created_at) {
+        const trialEnd = new Date(data.session.user.created_at)
+        trialEnd.setDate(trialEnd.getDate() + 7)
+        const days = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000))
+        setTrialDaysLeft(days)
+      }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUserEmail(session?.user?.email ?? null)
       setAccessToken(session?.access_token ?? null)
+      if (session?.user?.created_at) {
+        const trialEnd = new Date(session.user.created_at)
+        trialEnd.setDate(trialEnd.getDate() + 7)
+        const days = Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 86400000))
+        setTrialDaysLeft(days)
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -69,6 +89,18 @@ export default function DashboardPage() {
     setLoading(true)
     setLastQuery(q.trim())
     setLastCountry(c)
+
+    // Límite para invitados sin cuenta
+    if (!accessToken) {
+      const guestCount = parseInt(localStorage.getItem(GUEST_KEY) ?? '0', 10)
+      if (guestCount >= GUEST_LIMIT) {
+        setError('__limite__')
+        setSearchesUsed(guestCount)
+        setSearchesLimit(GUEST_LIMIT)
+        setLoading(false)
+        return
+      }
+    }
 
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
@@ -93,6 +125,12 @@ export default function DashboardPage() {
         if (data.searches_used !== undefined) {
           setSearchesUsed(data.searches_used)
           setSearchesLimit(data.searches_limit)
+        } else if (!accessToken) {
+          const next = parseInt(localStorage.getItem(GUEST_KEY) ?? '0', 10) + 1
+          localStorage.setItem(GUEST_KEY, String(next))
+          setGuestSearches(next)
+          setSearchesUsed(next)
+          setSearchesLimit(GUEST_LIMIT)
         }
       } else {
         const res = await fetch('/api/search/tiktok', {
@@ -113,6 +151,12 @@ export default function DashboardPage() {
         if (data.searches_used !== undefined) {
           setSearchesUsed(data.searches_used)
           setSearchesLimit(data.searches_limit)
+        } else if (!accessToken) {
+          const next = parseInt(localStorage.getItem(GUEST_KEY) ?? '0', 10) + 1
+          localStorage.setItem(GUEST_KEY, String(next))
+          setGuestSearches(next)
+          setSearchesUsed(next)
+          setSearchesLimit(GUEST_LIMIT)
         }
       }
     } catch (err) {
@@ -149,11 +193,12 @@ export default function DashboardPage() {
               </>
             ) : (
               <>
-                <span className="hidden sm:inline-block text-sm text-slate-500">
-                  Plan: <span className="font-semibold text-brand-600">Explorador (7 días gratis)</span>
-                </span>
+                <Link href="/pricing" className="hidden sm:flex items-center gap-1.5 text-sm text-slate-500 hover:text-brand-600 transition-colors">
+                  <Crown className="w-3.5 h-3.5" />
+                  Ver planes
+                </Link>
                 <Link href="/auth/register" className="bg-brand-600 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-brand-700">
-                  Mejorar plan
+                  Registrarse gratis
                 </Link>
               </>
             )}
@@ -262,7 +307,7 @@ export default function DashboardPage() {
                   <p className="text-sm font-semibold text-amber-800">Alcanzaste el límite de tu plan gratuito</p>
                   <p className="text-xs text-amber-600 mt-0.5">Usaste {searchesUsed} de {searchesLimit} búsquedas. Mejora tu plan para buscar sin límites.</p>
                 </div>
-                <Link href="/auth/register" className="text-sm font-bold bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
+                <Link href="/pricing" className="text-sm font-bold bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors whitespace-nowrap">
                   Ver planes →
                 </Link>
               </div>
@@ -338,10 +383,25 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
                     <Star className="w-5 h-5 text-amber-600" />
                   </div>
-                  <span className="font-semibold text-slate-700 text-sm">Días restantes</span>
+                  <span className="font-semibold text-slate-700 text-sm">
+                    {userEmail ? 'Días de trial' : 'Tu plan'}
+                  </span>
                 </div>
-                <p className="text-3xl font-extrabold text-slate-900">7 días</p>
-                <p className="text-slate-400 text-xs mt-1">Prueba gratuita activa</p>
+                {userEmail ? (
+                  <>
+                    <p className="text-3xl font-extrabold text-slate-900">{trialDaysLeft} días</p>
+                    <p className="text-slate-400 text-xs mt-1">
+                      {trialDaysLeft > 0 ? 'Prueba gratuita activa' : 'Trial vencido — mejora tu plan'}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-extrabold text-slate-900">Gratis</p>
+                    <p className="text-slate-400 text-xs mt-1">
+                      <Link href="/auth/register" className="text-brand-600 font-semibold hover:underline">Regístrate</Link> para 7 días + 3 búsquedas
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </>
